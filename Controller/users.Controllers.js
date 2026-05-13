@@ -71,9 +71,65 @@ const register = async (req, res) => {
             message: "Error Logging In"
         });
     }
+
+
+
  }
+
+ const update = async (req, res) => {
+    const {username,email, password } = req.body;
+    try{
+        const user = await User.findOne({ _id: req.params.id });
+
+        if(!user) {
+            return res.status(404).json({
+                message: "User Not Found"
+            });
+        }
+        user .email = email || user.email ||  user.username
+        if(password) {
+            user.password = await bcrypt.hash(password, 10);
+        }   
+        await user.save();
+        res.json({
+            message: "User Updated"
+        });
+    }catch (error) {
+        res.status(500).json({
+            message: "Error Updating User"
+        });
+    }
+
+
+
+}
+
+
+const Delete = async (req, res) => {
+    try {
+        const user = await User.findOne({ _id: req.params.id });
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User Not Found"
+            });
+        }
+        await user.remove();
+        res.json({
+            message: "User Deleted"
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: "Error Deleting User"
+        });
+        }
+    }
+
+
 
 module.exports = {
     register,
-    login
+    login,
+    update,
+    Delete
 }

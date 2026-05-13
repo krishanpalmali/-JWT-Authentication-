@@ -1,0 +1,2 @@
+MONGO_URI=mongodb://127.0.0.1:27017/jwtAuth
+JWT_SECRET=8xP#29kLm$Qw1@JwtSecure2026
