@@ -10,8 +10,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-console.log(process.env.MONGO_URI);
-
 mongoose.connect(process.env.MONGO_URI)
 .then(() => {
     console.log("Connected to MongoDB");
@@ -22,8 +20,14 @@ mongoose.connect(process.env.MONGO_URI)
 
 const userRoutes = require('./Routes/user.Routes');
 
+app.get("/", (req, res) => {
+    res.send("API Running");
+});
+
 app.use('/api/users', userRoutes);
 
-app.listen(5000, () => {
-    console.log("Server Started");
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`Server Started on ${PORT}`);
 });
