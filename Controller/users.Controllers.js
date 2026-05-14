@@ -2,41 +2,62 @@ const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
+// Register
 const register = async (req, res) => {
-
-    const { username , email, password } = req.body;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-
-
     try {
+        const { username, email, password } = req.body;
 
-        const newUSer = new User({
+        // Empty field check
+        if (!username || !email || !password) {
+            return res.status(400).json({
+                message: "All fields are required"
+            });
+        }
+
+        // Check existing user
+        const existingUser = await User.findOne({ email });
+
+        if (existingUser) {
+            return res.status(400).json({
+                message: "Email already exists"
+            });
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const newUser = new User({
             username,
             email,
             password: hashedPassword
         });
 
-        await newUSer.save();   
-        res.status(201).json({ message: "User Registered" });
+        await newUser.save();
+
+        res.status(201).json({
+            message: "User Registered Successfully"
+        });
 
     } catch (error) {
-        res.status(500).json({ message: "Error Registering User"        
-        })
-    
+
+        console.log("REGISTER ERROR:", error);
+
+        res.status(500).json({
+            message: error.message
+        });
     }
 };
 
- const login = async (req, res) => {
 
-    const { email, password } = req.body;
+// Login
+const login = async (req, res) => {
 
     try {
 
-        const user = await User.findOne({
-            email
-        });
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({
@@ -58,78 +79,96 @@ const register = async (req, res) => {
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }
+            { expiresIn: "1h" }
         );
 
-        res.json({
+        res.status(200).json({
+            message: "Login Successful",
             token
         });
 
     } catch (error) {
 
+        console.log("LOGIN ERROR:", error);
+
         res.status(500).json({
-            message: "Error Logging In"
+            message: error.message
         });
     }
+};
 
 
+// Update
+const update = async (req, res) => {
 
- }
-
- const update = async (req, res) => {
-    const {username,email, password } = req.body;
-    try{
-        const user = await User.findOne({ _id: req.params.id });
-
-        if(!user) {
-            return res.status(404).json({
-                message: "User Not Found"
-            });
-        }
-        user .email = email || user.email ||  user.username
-        if(password) {
-            user.password = await bcrypt.hash(password, 10);
-        }   
-        await user.save();
-        res.json({
-            message: "User Updated"
-        });
-    }catch (error) {
-        res.status(500).json({
-            message: "Error Updating User"
-        });
-    }
-
-
-
-}
-
-
-const Delete = async (req, res) => {
     try {
-        const user = await User.findOne({ _id: req.params.id });
+
+        const { username, email, password } = req.body;
+
+        const user = await User.findById(req.params.id);
 
         if (!user) {
             return res.status(404).json({
                 message: "User Not Found"
             });
         }
-        await user.remove();
+
+        user.username = username || user.username;
+        user.email = email || user.email;
+
+        if (password) {
+            user.password = await bcrypt.hash(password, 10);
+        }
+
+        await user.save();
+
+        res.json({
+            message: "User Updated"
+        });
+
+    } catch (error) {
+
+        console.log("UPDATE ERROR:", error);
+
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
+
+// Delete
+const Delete = async (req, res) => {
+
+    try {
+
+        const user = await User.findById(req.params.id);
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User Not Found"
+            });
+        }
+
+        await User.findByIdAndDelete(req.params.id);
+
         res.json({
             message: "User Deleted"
         });
+
     } catch (error) {
+
+        console.log("DELETE ERROR:", error);
+
         res.status(500).json({
-            message: "Error Deleting User"
+            message: error.message
         });
-        }
     }
-
-
+};
 
 module.exports = {
     register,
     login,
     update,
     Delete
-}
+};
